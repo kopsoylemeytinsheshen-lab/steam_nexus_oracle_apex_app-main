@@ -1,0 +1,179 @@
+//TABLES
+
+Table users {
+  user_id serial [pk]
+  username text [unique, not null]
+  email text [unique, not null]
+  password_hash text [not null]
+  created_at timestamptz
+}
+
+Table wallets {
+  wallet_id serial [pk]
+  user_id integer [unique, not null]
+  currency varchar(3) [default: 'USD']
+  balance numeric(12, 2) [default: 0]
+  updated_at timestamptz
+}
+
+Table games {
+  game_id serial [pk]
+  developer_id integer
+  title text [not null]
+  price numeric(12, 2) [not null, default: 0]
+  release_date timestamptz
+  age_rating text
+  description text
+}
+
+Table sessions {
+  session_id serial [pk]
+  user_id integer [not null]
+  game_id integer [not null]
+  start_time timestamptz
+  end_time timestamptz
+}
+
+Table promotions {
+  promo_id serial [pk]
+  code varchar(20) [unique, not null]
+  discount_percent numeric(5, 2)
+  start_date timestamptz
+  end_date timestamptz
+}
+
+Table badges {
+  badge_id serial [pk]
+  user_id integer [not null]
+  title text [not null]
+  awarded_at timestamptz
+}
+
+Table library {
+  game_id integer
+  user_id integer
+  purchase_id integer
+  added_date timestamptz
+
+  indexes {
+    (user_id, game_id) [pk] 
+  }
+}
+
+Table purchases {
+  purchase_id serial [pk]
+  user_id integer [not null]
+  purchase_type text
+  payment_method text
+  status text
+  purchase_date timestamptz
+  promo_id integer
+}
+
+Table purchases_item {
+  purchase_item_id serial [pk]
+  game_id integer
+  purchase_id integer
+  price_at_purchase numeric(12, 2) [not null]
+}
+
+Table reviews {
+  review_id serial [pk]
+  user_id integer
+  game_id integer
+  review_type boolean
+  comment text
+  review_date timestamptz
+}
+
+Table developers {
+  developer_id serial [pk]
+  name text [not null]
+  country text
+  descrption text
+}
+
+Table categories {
+  category_id serial [pk]
+  name text [not null, unique]
+}
+
+Table game_categories {
+  game_id integer
+  category_id integer
+
+  Indexes {
+    (game_id, category_id) [pk]
+  }
+}
+
+Table friends {
+  user_id integer
+  friend_id integer
+  status text
+
+  Indexes {
+    (user_id, friend_id) [pk]
+  }
+}
+
+Table messages {
+  message_id serial [pk]
+  sender_id integer
+  receiver_id integer
+  content text [not null]
+  sent_at timestamptz
+  is_read boolean [default: false]
+}
+
+Table achievements {
+  achievement_id serial [pk]
+  game_id integer
+  title text [not null]
+  description text
+}
+
+Table user_achievements {
+  user_id integer
+  achievement_id integer
+  unlocked_at timestamptz 
+
+  Indexes {
+    (user_id, achievement_id) [pk]
+  }
+}
+
+// RELATIONSHIPS
+
+// User Accounts & Profiles
+Ref: wallets.user_id - users.user_id
+Ref: library.user_id - users.user_id
+Ref: reviews.user_id > users.user_id
+Ref: user_achievements.user_id > users.user_id
+Ref: badges.user_id > users.user_id
+
+// Social & Communication
+Ref: friends.user_id > users.user_id
+Ref: friends.friend_id > users.user_id
+Ref: messages.sender_id > users.user_id
+Ref: messages.receiver_id > users.user_id
+
+// Game Metadata & Stats
+Ref: games.developer_id > developers.developer_id
+Ref: game_categories.game_id > games.game_id
+Ref: game_categories.category_id > categories.category_id
+Ref: library.game_id > games.game_id
+Ref: reviews.game_id > games.game_id
+Ref: sessions.user_id > users.user_id
+Ref: sessions.game_id > games.game_id
+
+// Sales & Promotions
+Ref: purchases.user_id > users.user_id
+Ref: purchases_item.purchase_id > purchases.purchase_id
+Ref: purchases_item.game_id > games.game_id
+Ref: library.purchase_id - purchases.purchase_id
+Ref: purchases.promo_id > promotions.promo_id
+
+// Achievements
+Ref: achievements.game_id > games.game_id
+Ref: user_achievements.achievement_id > achievements.achievement_id
